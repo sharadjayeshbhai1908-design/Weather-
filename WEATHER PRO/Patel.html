@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SkyCast Ultra Pro</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+
+/* =========================
+   GLOBAL
+========================= */
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Outfit',sans-serif;
+}
+
+body{
+background:#000;
+color:white;
+overflow-x:hidden;
+min-height:100vh;
+}
+
+/* =========================
+   DYNAMIC BACKGROUND
+========================= */
+
+.dynamic-bg{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:-3;
+background-size:cover;
+background-position:center;
+animation:bgZoom 25s infinite alternate;
+transition:1s;
+}
+
+.dynamic-bg::after{
+content:'';
+position:absolute;
+inset:0;
+background:
+linear-gradient(
+rgba(0,0,0,0.25),
+rgba(0,0,0,0.6)
+);
+}
+
+@keyframes bgZoom{
+from{
+transform:scale(1);
+}
+to{
+transform:scale(1.1);
+}
+}
+
+/* =========================
+   WEATHER ANIMATIONS
+========================= */
+
+.weather-animation-container{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+pointer-events:none;
+z-index:-1;
+overflow:hidden;
+}
+
+/* Rain */
+
+.raindrop{
+position:absolute;
+width:2px;
+height:70px;
+
+background:linear-gradient(
+transparent,
+rgba(255,255,255,0.9)
+);
+
+border-radius:50px;
+
+animation:rain linear infinite;
+}
+
+@keyframes rain{
+0%{
+transform:translateY(-100px) rotate(15deg);
+}
+
+100%{
+transform:translateY(120vh) rotate(15deg);
+}
+}
+
+/* Sunbeams */
+
+.sunbeam{
+position:absolute;
+top:-200px;
+width:200px;
+height:1400px;
+
+background:
+linear-gradient(
+rgba(255,255,255,0.25),
+transparent
+);
+
+filter:blur(45px);
+
+transform:rotate(25deg);
+
+animation:sunPulse 8s infinite ease-in-out;
+}
+
+@keyframes sunPulse{
+
+0%,100%{
+opacity:0.2;
+}
+
+50%{
+opacity:0.55;
+}
+
+}
+
+/* =========================
+   APP CONTAINER
+========================= */
+
+.app-container{
+max-width:1500px;
+margin:auto;
+padding:25px;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:20px;
+flex-wrap:wrap;
+margin-bottom:25px;
+}
+
+.logo{
+font-size:34px;
+font-weight:800;
+display:flex;
+align-items:center;
+gap:12px;
+}
+
+.logo i{
+color:#facc15;
+}
+
+/* =========================
+   SEARCH
+========================= */
+
+.search-wrapper{
+position:relative;
+width:450px;
+max-width:100%;
+}
+
+.search-wrapper input{
+width:100%;
+padding:18px 60px;
+
+background:rgba(255,255,255,0.08);
+
+backdrop-filter:blur(30px)
+saturate(180%);
+
+-webkit-backdrop-filter:blur(30px)
+saturate(180%);
+
+border:1px solid rgba(255,255,255,0.2);
+
+border-radius:60px;
+
+outline:none;
+
+font-size:16px;
+
+color:white;
+}
+
+.search-icon{
+position:absolute;
+left:22px;
+top:20px;
+font-size:18px;
+opacity:0.8;
+}
+
+#voice-search-btn{
+position:absolute;
+right:10px;
+top:8px;
+
+width:45px;
+height:45px;
+
+border:none;
+border-radius:50%;
+
+background:#6366f1;
+color:white;
+
+cursor:pointer;
+}
+
+/* =========================
+   LIQUID GLASS
+========================= */
+
+.glass-card{
+
+background:rgba(255,255,255,0.08);
+
+backdrop-filter:blur(30px)
+saturate(180%);
+
+-webkit-backdrop-filter:blur(30px)
+saturate(180%);
+
+border:1px solid rgba(255,255,255,0.2);
+
+border-radius:30px;
+
+padding:25px;
+
+box-shadow:
+0 8px 32px rgba(0,0,0,0.25),
+inset 0 1px 1px rgba(255,255,255,0.2),
+inset 0 -1px 1px rgba(255,255,255,0.08);
+
+transition:0.4s;
+}
+
+.glass-card:hover{
+
+transform:
+translateY(-10px)
+scale(1.02);
+
+box-shadow:
+0 20px 60px rgba(0,0,0,0.45);
+}
+
+/* =========================
+   MAIN GRID
+========================= */
+
+main{
+display:grid;
+grid-template-columns:1.2fr 0.8fr;
+gap:25px;
+}
+
+.main-column,
+.side-column{
+display:flex;
+flex-direction:column;
+gap:25px;
+}
+
+/* =========================
+   CURRENT WEATHER
+========================= */
+
+.current-weather{
+padding:35px;
+}
+
+.elegant-label{
+font-size:15px;
+letter-spacing:5px;
+text-transform:uppercase;
+opacity:0.8;
+margin-bottom:10px;
+}
+
+.elegant-title{
+
+font-size:4rem;
+font-weight:800;
+
+letter-spacing:4px;
+text-transform:uppercase;
+
+background:
+linear-gradient(
+to bottom,
+white,
+rgba(255,255,255,0.5)
+);
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+.weather-main-info{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-top:30px;
+flex-wrap:wrap;
+gap:30px;
+}
+
+.temp-display{
+font-size:7rem;
+font-weight:800;
+}
+
+.weather-condition{
+text-align:center;
+}
+
+.weather-condition img{
+width:150px;
+animation:float 4s ease-in-out infinite;
+}
+
+@keyframes float{
+
+0%,100%{
+transform:translateY(0);
+}
+
+50%{
+transform:translateY(-12px);
+}
+
+}
+
+#weather-desc{
+font-size:22px;
+margin-top:10px;
+text-transform:capitalize;
+}
+
+/* =========================
+   AI BOX
+========================= */
+
+.ai-suggestions{
+margin-top:25px;
+
+background:
+rgba(99,102,241,0.18);
+
+border:1px solid
+rgba(99,102,241,0.3);
+
+padding:18px;
+border-radius:18px;
+
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+/* =========================
+   FORECAST
+========================= */
+
+.hourly-container,
+.daily-container{
+display:flex;
+gap:18px;
+overflow-x:auto;
+padding-bottom:10px;
+}
+
+.forecast-item{
+min-width:120px;
+text-align:center;
+
+padding:18px;
+
+border-radius:20px;
+
+background:
+rgba(255,255,255,0.07);
+
+transition:0.4s;
+}
+
+.forecast-item:hover{
+background:
+rgba(255,255,255,0.12);
+}
+
+/* =========================
+   DETAILS GRID
+========================= */
+
+.details-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:18px;
+}
+
+.detail-item{
+text-align:center;
+}
+
+.detail-item i{
+font-size:30px;
+margin-bottom:12px;
+color:#818cf8;
+}
+
+.detail-item h4{
+margin-bottom:10px;
+}
+
+/* =========================
+   MAP
+========================= */
+
+#weather-map{
+height:400px;
+border-radius:20px;
+overflow:hidden;
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+footer{
+margin-top:30px;
+text-align:center;
+opacity:0.7;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:1000px){
+
+main{
+grid-template-columns:1fr;
+}
+
+.temp-display{
+font-size:5rem;
+}
+
+.elegant-title{
+font-size:2.5rem;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="dynamic-bg" class="dynamic-bg"></div>
+
+<div id="weather-animation-container"
+class="weather-animation-container"></div>
+
+<div class="app-container">
+
+<header>
+
+<div class="logo">
+<i class="fas fa-cloud-sun-rain"></i>
+SkyCast Ultra Pro
+</div>
+
+<div class="search-wrapper">
+
+<i class="fas fa-search search-icon"></i>
+
+<input
+type="text"
+id="city-input"
+placeholder="Select Country or City...">
+
+<button id="voice-search-btn">
+<i class="fas fa-microphone"></i>
+</button>
+
+</div>
+
+</header>
+
+<main>
+
+<div class="main-column">
+
+<section class="glass-card current-weather">
+
+<h2 class="elegant-label">
+Current Weather In
+</h2>
+
+<h1 id="city-name"
+class="elegant-title">
+NEW DELHI, INDIA
+</h1>
+
+<p id="live-clock"></p>
+
+<div class="weather-main-info">
+
+<div class="temp-display">
+<span id="current-temp">28</span>°C
+</div>
+
+<div class="weather-condition">
+
+<img id="weather-icon"
+src="https://openweathermap.org/img/wn/04d@4x.png">
+
+<p id="weather-desc">
+Cloudy
+</p>
+
+</div>
+
+</div>
+
+<div class="ai-suggestions">
+
+<i class="fas fa-robot"></i>
+
+<span id="ai-text">
+Perfect weather for outdoor activities ✨
+</span>
+
+</div>
+
+</section>
+
+<section class="glass-card">
+
+<h3>Hourly Forecast</h3>
+
+<div id="hourly-forecast"
+class="hourly-container"></div>
+
+</section>
+
+<section class="glass-card">
+
+<h3>5-Day Forecast</h3>
+
+<div id="daily-forecast"
+class="daily-container"></div>
+
+</section>
+
+</div>
+
+<div class="side-column">
+
+<section class="details-grid">
+
+<div class="glass-card detail-item">
+<i class="fas fa-droplet"></i>
+<h4>Humidity</h4>
+<p id="humidity-val">82%</p>
+</div>
+
+<div class="glass-card detail-item">
+<i class="fas fa-wind"></i>
+<h4>Wind Speed</h4>
+<p id="wind-val">12 km/h</p>
+</div>
+
+<div class="glass-card detail-item">
+<i class="fas fa-gauge-high"></i>
+<h4>Pressure</h4>
+<p id="pressure-val">1012 hPa</p>
+</div>
+
+<div class="glass-card detail-item">
+<i class="fas fa-eye"></i>
+<h4>Visibility</h4>
+<p id="visibility-val">10 km</p>
+</div>
+
+</section>
+
+<section class="glass-card">
+
+<h3>Weather Map</h3>
+
+<div id="weather-map"></div>
+
+</section>
+
+</div>
+
+</main>
+
+<footer>
+© 2026 SkyCast Ultra Pro
+</footer>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+/* =========================
+   API
+========================= */
+
+const API_KEY =
+"5b51ee2fdf85441f80bf67e5c8e55f09";
+
+const BASE_URL =
+"https://api.openweathermap.org/data/2.5";
+
+/* =========================
+   DOM
+========================= */
+
+const cityInput =
+document.getElementById("city-input");
+
+const cityName =
+document.getElementById("city-name");
+
+const currentTemp =
+document.getElementById("current-temp");
+
+const weatherDesc =
+document.getElementById("weather-desc");
+
+const weatherIcon =
+document.getElementById("weather-icon");
+
+const humidityVal =
+document.getElementById("humidity-val");
+
+const windVal =
+document.getElementById("wind-val");
+
+const pressureVal =
+document.getElementById("pressure-val");
+
+const visibilityVal =
+document.getElementById("visibility-val");
+
+const aiText =
+document.getElementById("ai-text");
+
+const hourlyForecast =
+document.getElementById("hourly-forecast");
+
+const dailyForecast =
+document.getElementById("daily-forecast");
+
+const dynamicBg =
+document.getElementById("dynamic-bg");
+
+const weatherAnimationContainer =
+document.getElementById(
+"weather-animation-container"
+);
+
+const liveClock =
+document.getElementById("live-clock");
+
+/* =========================
+   CLOCK
+========================= */
+
+function updateClock(){
+
+const now = new Date();
+
+liveClock.innerHTML =
+now.toLocaleTimeString();
+
+}
+
+setInterval(updateClock,1000);
+
+updateClock();
+
+/* =========================
+   LANDMARK BACKGROUNDS
+========================= */
+
+const landmarkBackgrounds = {
+
+india:
+"https://images.unsplash.com/photo-1564507592333-c60657eea523?q=80&w=1920",
+
+france:
+"https://images.unsplash.com/photo-1431274172761-fca41d930114?q=80&w=1920",
+
+usa:
+"https://images.unsplash.com/photo-1485738422979-f5c462d49f74?q=80&w=1920",
+
+japan:
+"https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=1920",
+
+uk:
+"https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=1920"
+
+};
+
+/* =========================
+   SEARCH
+========================= */
+
+cityInput.addEventListener(
+"keypress",
+(e)=>{
+
+if(e.key==="Enter"){
+
+fetchWeather(cityInput.value);
+
+}
+
+}
+);
+
+/* =========================
+   FETCH WEATHER
+========================= */
+
+async function fetchWeather(city){
+
+try{
+
+const res =
+await fetch(
+`${BASE_URL}/weather?q=${city}&units=metric&appid=${API_KEY}`
+);
+
+const data =
+await res.json();
+
+updateUI(data);
+
+fetchForecast(city);
+
+}
+catch(err){
+
+alert("City not found");
+
+}
+
+}
+
+/* =========================
+   FORECAST
+========================= */
+
+async function fetchForecast(city){
+
+const res =
+await fetch(
+`${BASE_URL}/forecast?q=${city}&units=metric&appid=${API_KEY}`
+);
+
+const data =
+await res.json();
+
+updateForecast(data);
+
+}
+
+/* =========================
+   UPDATE UI
+========================= */
+
+function updateUI(data){
+
+cityName.innerHTML =
+`${data.name},
+${data.sys.country}`;
+
+currentTemp.innerHTML =
+Math.round(data.main.temp);
+
+weatherDesc.innerHTML =
+data.weather[0].description;
+
+weatherIcon.src =
+`https://openweathermap.org/img/wn/${data.weather[0].icon}@4x.png`;
+
+humidityVal.innerHTML =
+data.main.humidity + "%";
+
+windVal.innerHTML =
+data.wind.speed + " km/h";
+
+pressureVal.innerHTML =
+data.main.pressure + " hPa";
+
+visibilityVal.innerHTML =
+(data.visibility/1000).toFixed(1)
++ " km";
+
+/* AI Suggestions */
+
+generateSuggestion(
+data.main.temp,
+data.weather[0].main
+);
+
+/* Background */
+
+updateCountryBackground(
+data.sys.country
+);
+
+/* Effects */
+
+updateWeatherEffects(
+data.weather[0].main
+);
+
+/* Map */
+
+updateMap(
+data.coord.lat,
+data.coord.lon
+);
+
+}
+
+/* =========================
+   AI SUGGESTION
+========================= */
+
+function generateSuggestion(
+temp,
+condition
+){
+
+if(temp>35){
+
+aiText.innerHTML =
+"Stay hydrated 🥤";
+
+}
+else if(temp<15){
+
+aiText.innerHTML =
+"Wear warm clothes 🧥";
+
+}
+else if(condition.includes("Rain")){
+
+aiText.innerHTML =
+"Carry umbrella ☔";
+
+}
+else{
+
+aiText.innerHTML =
+"Perfect weather today ✨";
+
+}
+
+}
+
+/* =========================
+   BACKGROUND
+========================= */
+
+function updateCountryBackground(country){
+
+country = country.toLowerCase();
+
+if(country==="in"){
+dynamicBg.style.backgroundImage =
+`url('${landmarkBackgrounds.india}')`;
+}
+
+else if(country==="fr"){
+dynamicBg.style.backgroundImage =
+`url('${landmarkBackgrounds.france}')`;
+}
+
+else if(country==="us"){
+dynamicBg.style.backgroundImage =
+`url('${landmarkBackgrounds.usa}')`;
+}
+
+else if(country==="jp"){
+dynamicBg.style.backgroundImage =
+`url('${landmarkBackgrounds.japan}')`;
+}
+
+else{
+
+dynamicBg.style.backgroundImage =
+`url('${landmarkBackgrounds.uk}')`;
+
+}
+
+}
+
+/* =========================
+   WEATHER EFFECTS
+========================= */
+
+function updateWeatherEffects(condition){
+
+weatherAnimationContainer.innerHTML =
+"";
+
+if(condition.includes("Rain")){
+
+createRain();
+
+}
+
+else if(condition.includes("Clear")){
+
+createSunbeams();
+
+}
+
+}
+
+/* =========================
+   RAIN
+========================= */
+
+function createRain(){
+
+for(let i=0;i<150;i++){
+
+const drop =
+document.createElement("div");
+
+drop.className =
+"raindrop";
+
+drop.style.left =
+Math.random()*100 + "vw";
+
+drop.style.animationDuration =
+(Math.random()*0.5+0.5)+"s";
+
+drop.style.opacity =
+Math.random();
+
+weatherAnimationContainer
+.appendChild(drop);
+
+}
+
+}
+
+/* =========================
+   SUNBEAMS
+========================= */
+
+function createSunbeams(){
+
+for(let i=0;i<5;i++){
+
+const beam =
+document.createElement("div");
+
+beam.className =
+"sunbeam";
+
+beam.style.left =
+(i*20)+"%";
+
+weatherAnimationContainer
+.appendChild(beam);
+
+}
+
+}
+
+/* =========================
+   FORECAST UI
+========================= */
+
+function updateForecast(data){
+
+hourlyForecast.innerHTML="";
+dailyForecast.innerHTML="";
+
+data.list.slice(0,8)
+.forEach(item=>{
+
+hourlyForecast.innerHTML += `
+
+<div class="forecast-item">
+
+<p>
+${new Date(item.dt*1000)
+.getHours()}:00
+</p>
+
+<img
+src="https://openweathermap.org/img/wn/${item.weather[0].icon}.png">
+
+<p>
+${Math.round(item.main.temp)}°C
+</p>
+
+</div>
+
+`;
+
+});
+
+const dailyData =
+data.list.filter(item=>
+item.dt_txt.includes("12:00:00")
+);
+
+dailyData.forEach(item=>{
+
+dailyForecast.innerHTML += `
+
+<div class="forecast-item">
+
+<p>
+${new Date(item.dt*1000)
+.toLocaleDateString([],{
+weekday:'short'
+})}
+</p>
+
+<img
+src="https://openweathermap.org/img/wn/${item.weather[0].icon}.png">
+
+<p>
+${Math.round(item.main.temp)}°C
+</p>
+
+</div>
+
+`;
+
+});
+
+}
+
+/* =========================
+   MAP
+========================= */
+
+let map =
+L.map('weather-map')
+.setView([28.6139,77.2090],10);
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+attribution:'© OpenStreetMap'
+}
+).addTo(map);
+
+function updateMap(lat,lon){
+
+map.setView([lat,lon],10);
+
+L.marker([lat,lon]).addTo(map);
+
+}
+
+/* =========================
+   DEFAULT
+========================= */
+
+fetchWeather("New Delhi");
+
+</script>
+
+</body>
+</html>
